@@ -140,7 +140,7 @@ export default class App extends React.Component {
           drone.authenticate(jwt)
         );
       } else {
-        AlertAndroid.prompt("Please insert your name", null, name =>
+        Alert.prompt("Please insert your name", null, name =>
           doAuthRequest(drone.clientId, name).then(jwt =>
             drone.authenticate(jwt)
           )
@@ -208,6 +208,7 @@ export default class App extends React.Component {
   }
 
   updateLocation(data, memberId) {
+    console.log("data", data);
     const { members } = this.state;
     const member = members.find(m => m.id === memberId);
     if (!member) {
@@ -286,7 +287,6 @@ export default class App extends React.Component {
       //lastLong: lastLong || this.state.lastLong,
     });
     this.arrayMarker.push(this.state.curCoordinates);
-    console.log(this.state.mapRegion);
   }
 
   geoAddress = value => {
@@ -302,13 +302,10 @@ export default class App extends React.Component {
           if (responseJson.results) {
             this._results = responseJson.results[0];
 
-            console.log(this._results);
-
             this.setState({
               destCoordinates: this._results.geometry.location
             });
             this.arrayMarker.push(this.state.destCoordinates);
-            console.log("destCoordinates", this.state.destCoordinates);
           } else {
             return console.log("error");
           }
@@ -322,8 +319,7 @@ export default class App extends React.Component {
     const { value } = this.state;
 
     this.state.coordinates = [];
-
-    console.log(value);
+    this.arrayMarker = [];
     //this.geoAddress(origin);
     Keyboard.dismiss();
     this.temp_value = value;
@@ -345,11 +341,6 @@ export default class App extends React.Component {
   };
 
   onMapPress = e => {
-    console.log("e.nativeEvent.coordinate", e.nativeEvent.coordinate);
-    console.log("this.arrayMarker", this.arrayMarker);
-    console.log(
-      this.containsObject(e.nativeEvent.coordinate, this.arrayMarker)
-    );
     /*if (this.state.coordinates.length == 2) {
       this.setState({
         coordinates: [e.nativeEvent.coordinate],
@@ -367,8 +358,6 @@ export default class App extends React.Component {
       });
       this.arrayMarker.push(this.state.coordinates);
     }
-
-    console.log(this.state.coordinates);
   };
 
   onReady = result => {
@@ -378,7 +367,7 @@ export default class App extends React.Component {
     this.mapView.fitToCoordinates(result.coordinates, {
       edgePadding: {
         right: width / 20,
-        bottom: height / 20,
+        bottom: height / 8,
         left: width / 20,
         top: height / 5
       }
@@ -413,7 +402,7 @@ export default class App extends React.Component {
                 latitude: this.state.destCoordinates.lat,
                 longitude: this.state.destCoordinates.lng
               }}
-              title={`${this._results}`}
+              title={`${this._results.formatted_address}`}
             />
           )}
           {this.state.coordinates.length >= 1 &&
@@ -528,7 +517,6 @@ export default class App extends React.Component {
   createMembers() {
     const { members } = this.state;
 
-    const memberMe = members.find(m => m.id === this._clientID);
     return members.map(member => {
       const { name, color } = member.authData;
       return (
@@ -551,9 +539,10 @@ export default class App extends React.Component {
 }
 
 function doAuthRequest(clientId, name) {
+  console.log("clientID", clientId);
+  console.log("name", name);
   let status;
-  console.log("go here");
-  return fetch("http://192.168.0.107:3000/auth", {
+  return fetch("http://192.168.1.61:3000/auth", {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -563,7 +552,6 @@ function doAuthRequest(clientId, name) {
   })
     .then(res => {
       status = res.status;
-      console.log("res", res);
       return res.text();
     })
     .then(text => {
