@@ -1,0 +1,24 @@
+{
+    "data": [
+        {
+            "tripId": "123",
+            "email": "abc@gmail.com",
+            "step": "2002"
+        },
+        {
+            "tripId": "123",
+            "email": "xyz@gmail.com",
+            "step": "dj"            
+        },
+        {
+            "tripId": "123",
+            "email": "xyz@gmail.com",
+            "step": "dj"            
+        },
+        {
+            "tripId": "123",
+            "email": "xyz@gmail.com",
+            "step": "dj"            
+        }
+    ]
+}

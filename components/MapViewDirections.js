@@ -132,6 +132,8 @@ class MapViewDirections extends Component {
       waypoints = `optimize:true|${waypoints}`;
     }
 
+    console.log("origin", origin);
+
     onStart &&
       onStart({
         origin,
@@ -248,7 +250,8 @@ MapViewDirections.propTypes = {
     PropTypes.shape({
       latitude: PropTypes.number.isRequired,
       longitude: PropTypes.number.isRequired
-    })
+    }),
+    PropTypes.any
   ]),
   waypoints: PropTypes.arrayOf(
     PropTypes.oneOfType([
@@ -257,14 +260,16 @@ MapViewDirections.propTypes = {
         latitude: PropTypes.number.isRequired,
         longitude: PropTypes.number.isRequired
       })
-    ])
+    ]),
+    PropTypes.any
   ),
   destination: PropTypes.oneOfType([
     PropTypes.string,
     PropTypes.shape({
       latitude: PropTypes.number.isRequired,
       longitude: PropTypes.number.isRequired
-    })
+    }),
+    PropTypes.any
   ]),
   apikey: PropTypes.string.isRequired,
   onStart: PropTypes.func,

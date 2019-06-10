@@ -1,9 +1,10 @@
 {
   "expoServerNgrokUrl": "https://qw-k7h.minhdat97vn.maps-deploy.exp.direct",
   "packagerNgrokUrl": "https://packager.qw-k7h.minhdat97vn.maps-deploy.exp.direct",
-  "ngrokPid": 7640,
+  "ngrokPid": 12984,
   "expoServerPort": 19000,
   "devToolsPort": 19002,
   "packagerPort": 19001,
-  "packagerPid": 17600
+  "packagerPid": 12416,
+  "webpackServerPort": null
 }

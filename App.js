@@ -27,6 +27,7 @@ import { Card } from "react-native-paper";
 import { InputGroup, Input, Button, H3, Icon } from "native-base";
 const Scaledrone = require("scaledrone-react-native");
 const SCALEDRONE_CHANNEL_ID = require("./scaledrone_channel_id.json");
+const db = require("./db.json");
 
 // You can import from local files
 import apis from "./components/Constant/api";
@@ -39,6 +40,12 @@ const LATITUDE = 10.766080148731438;
 const LONGITUDE = 106.65898310270131;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
+// const startCoordinates = [
+//   {
+//     latitude: 10.7745397,
+//     longitude: 106.6991836
+//   }
+// ];
 
 const GOOGLE_MAPS_APIKEY = "AIzaSyDCLvmZ_auB3d8yaIkHHZMu83Jta4Vir8w";
 
@@ -57,6 +64,13 @@ export default class App extends React.Component {
         }
       ],
 
+      // startCoordinates: [
+      //   {
+      //     latitude: 10.7745397,
+      //     longitude: 106.6991836
+      //   }
+      // ],
+
       coordinates: [
         /*{
           latitude: 10.7903633,
@@ -69,16 +83,28 @@ export default class App extends React.Component {
           lng: null
         }
       ],
+      startCoordinates: {
+        latitude: 10.7745397,
+        longitude: 106.6991836
+      },
       value: null,
       temp_value: null,
       fontLoaded: false,
       isListingSelected: false,
       members: []
     };
+    // this.startCoordinates = [
+    //   {
+    //     latitude: 10.7745397,
+    //     longitude: 106.6991836
+    //   }
+    // ];
     this._results = null;
     this.mapView = null;
     this._clientID = null;
     this.arrayMarker = [];
+    this.myID = "abc@gmail.com";
+    this.friendID = "xyz@gmail.com";
   }
 
   async componentWillMount() {
@@ -122,6 +148,10 @@ export default class App extends React.Component {
     this._getLocationFriendAsync();
   }
 
+  componentWillUnmount() {
+    navigator.geolocation.clearWatch(this.watchID);
+  }
+
   _getLocationFriendAsync = async () => {
     const drone = new Scaledrone(SCALEDRONE_CHANNEL_ID);
     drone.on("error", error => console.error(error));
@@ -131,20 +161,28 @@ export default class App extends React.Component {
         return console.error(error);
       }
       if (Platform.OS === "ios") {
+        console.log("startCoordinates[0]", this.state.startCoordinates);
         // AlertIOS.prompt("Please insert your name", null, name =>
         //   doAuthRequest(drone.clientId, name).then(jwt =>
         //     drone.authenticate(jwt)
         //   )
         // );
-        doAuthRequest(drone.clientId, "Đạt").then(jwt =>
-          drone.authenticate(jwt)
-        );
+        doAuthRequest(
+          drone.clientId,
+          this.myID,
+          this.state.startCoordinates
+        ).then(jwt => drone.authenticate(jwt));
       } else {
-        Alert.prompt("Please insert your name", null, name =>
-          doAuthRequest(drone.clientId, name).then(jwt =>
-            drone.authenticate(jwt)
-          )
-        );
+        // Alert.prompt("Please insert your name", null, name =>
+        //   doAuthRequest(drone.clientId, name).then(jwt =>
+        //     drone.authenticate(jwt)
+        //   )
+        // );
+        doAuthRequest(
+          drone.clientId,
+          this.friendID,
+          this.state.startCoordinates
+        ).then(jwt => drone.authenticate(jwt));
       }
       this._clientID = drone.clientId;
 
@@ -159,6 +197,8 @@ export default class App extends React.Component {
       }
       this.startLocationTracking(position => {
         const { latitude, longitude } = position.coords;
+        const tripcode = db.data[0].tripcode;
+
         let region = {
           latitude: latitude,
           longitude: longitude,
@@ -199,16 +239,19 @@ export default class App extends React.Component {
   };
 
   startLocationTracking(callback) {
-    navigator.geolocation.watchPosition(callback, error => console.log(error), {
-      enableHighAccuracy: true,
-      timeout: 20000,
-      maximumAge: 1000,
-      distanceFilter: 1
-    });
+    this.watchID = navigator.geolocation.watchPosition(
+      callback,
+      error => console.log(error),
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 1000,
+        distanceFilter: 1
+      }
+    );
   }
 
   updateLocation(data, memberId) {
-    console.log("data", data);
     const { members } = this.state;
     const member = members.find(m => m.id === memberId);
     if (!member) {
@@ -302,6 +345,8 @@ export default class App extends React.Component {
           if (responseJson.results) {
             this._results = responseJson.results[0];
 
+            console.log("_results", this._results);
+
             this.setState({
               destCoordinates: this._results.geometry.location
             });
@@ -340,7 +385,36 @@ export default class App extends React.Component {
     else return false;
   };
 
+  onLayout = () => {
+    setTimeout(() => {
+      this.mapView.fitToCoordinates(
+        [
+          {
+            latitude: this.state.curCoordinates.latitude,
+            longitude: this.state.curCoordinates.longitude
+          },
+          {
+            latitude: this.state.destCoordinates.lat,
+            longitude: this.state.destCoordinates.lng
+          }
+        ],
+        {
+          edgePadding: {
+            right: width / 20,
+            bottom: height / 8,
+            left: width / 20,
+            top: height / 5
+          }
+        }
+      );
+    }, 2000);
+  };
+
   onMapPress = e => {
+    console.log("this.arrayMarker", this.arrayMarker);
+    console.log(
+      this.containsObject(e.nativeEvent.coordinate, this.arrayMarker)
+    );
     /*if (this.state.coordinates.length == 2) {
       this.setState({
         coordinates: [e.nativeEvent.coordinate],
@@ -363,6 +437,7 @@ export default class App extends React.Component {
   onReady = result => {
     console.log(`Distance: ${result.distance} km`);
     console.log(`Duration: ${result.duration} min.`);
+    console.log("result.coordinates", result.coordinates);
 
     this.mapView.fitToCoordinates(result.coordinates, {
       edgePadding: {
@@ -382,6 +457,10 @@ export default class App extends React.Component {
     if (!this.state.fontLoaded) {
       return <AppLoading />;
     }
+    console.log("startLocation", this.state.startCoordinates);
+    this.arrayMarker.push(this.state.startCoordinates);
+    this.arrayMarker.push(this.state.curCoordinates);
+
     return (
       <View style={styles.container}>
         <MapView
@@ -394,6 +473,7 @@ export default class App extends React.Component {
           //showsMyLocationButton={true}
           showsPointsOfInterest={true}
           onPress={this.onMapPress.bind(this)}
+          onLayout={this.onLayout}
         >
           {this.createMarkers()}
           {!!this.state.destCoordinates.lat && (
@@ -402,7 +482,16 @@ export default class App extends React.Component {
                 latitude: this.state.destCoordinates.lat,
                 longitude: this.state.destCoordinates.lng
               }}
-              title={`${this._results.formatted_address}`}
+              title={`${this._results.address_components[0].long_name}`}
+            />
+          )}
+          {!!this.state.startCoordinates && (
+            <MapView.Marker
+              coordinate={{
+                latitude: this.state.startCoordinates.latitude,
+                longitude: this.state.startCoordinates.longitude
+              }}
+              title={"Start point"}
             />
           )}
           {this.state.coordinates.length >= 1 &&
@@ -416,11 +505,32 @@ export default class App extends React.Component {
                 />
               ) // eslint-disable-line react/no-array-index-key
             )}
+          {this.createDirection()}
+          {/* {!!startCoordinates[0] && (
+            <MapViewDirections
+              origin={this.state.curCoordinates}
+              waypoints={null}
+              destination={startCoordinates[0]}
+              apikey={GOOGLE_MAPS_APIKEY}
+              strokeWidth={3}
+              strokeColor="blue"
+              optimizeWaypoints={true}
+              onStart={params => {
+                console.log(
+                  `Started routing between "${params.origin}" and "${
+                    params.destination
+                  }"`
+                );
+              }}
+              //onReady={this.onReady}
+              onError={this.onError}
+            />
+          )} */}
           {!!this.state.destCoordinates.lat && (
             <MapViewDirections
               /*origin={this.state.coordinates[0]}
               destination={this.state.coordinates[1]}*/
-              origin={this.state.curCoordinates}
+              origin={this.state.startCoordinates}
               waypoints={
                 this.state.coordinates.length >= 1
                   ? this.state.coordinates
@@ -440,7 +550,7 @@ export default class App extends React.Component {
                   }"`
                 );
               }}
-              onReady={this.onReady}
+              //onReady={this.onReady}
               onError={this.onError}
             />
           )}
@@ -494,6 +604,47 @@ export default class App extends React.Component {
     );
   }
 
+  createDirection() {
+    console.log("hers");
+    const { members } = this.state;
+    const membersWithFirstPoint = members.filter(
+      m => !!m.authData.firstPoint && !!m.location
+    );
+    console.log("membersWithFirstPoint", membersWithFirstPoint);
+
+    return membersWithFirstPoint.map(member => {
+      const { id, location, authData } = member;
+      const { color } = authData;
+      let origin = location;
+      console.log("this.state.cur", this.state.curCoordinates);
+      console.log("color", color);
+
+      return (
+        <MapViewDirections
+          key={id}
+          origin={this.state.curCoordinates}
+          waypoints={null}
+          destination={`${authData.firstPoint[0].latitude},${
+            authData.firstPoint[0].longitude
+          }`}
+          apikey={GOOGLE_MAPS_APIKEY}
+          strokeWidth={3}
+          strokeColor={color}
+          optimizeWaypoints={true}
+          onStart={params => {
+            console.log(
+              `Started routing between "${params.origin}" and "${
+                params.destination
+              }"`
+            );
+          }}
+          //onReady={this.onReady}
+          onError={this.onError}
+        />
+      );
+    });
+  }
+
   createMarkers() {
     const { members } = this.state;
 
@@ -517,16 +668,16 @@ export default class App extends React.Component {
   createMembers() {
     const { members } = this.state;
 
+    console.log("members", members);
+
     return members.map(member => {
       const { name, color } = member.authData;
       return (
         <View key={member.id} style={styles.member}>
           <View style={[styles.avatar, { backgroundColor: color }]} />
-          {member.id === this._clientID ? (
+          {member.id === this._clientID && name === this.myID ? (
             <Text style={styles.memberName}>Tôi</Text>
-          ) : (
-            <Text style={styles.memberName}>{name}</Text>
-          )}
+          ) : null}
         </View>
       );
     });
@@ -538,17 +689,15 @@ export default class App extends React.Component {
   }
 }
 
-function doAuthRequest(clientId, name) {
-  console.log("clientID", clientId);
-  console.log("name", name);
+function doAuthRequest(clientId, name, firstPoint) {
   let status;
-  return fetch("http://192.168.1.61:3000/auth", {
+  return fetch("http://172.16.3.30:3000/auth", {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ clientId, name })
+    body: JSON.stringify({ clientId, name, firstPoint })
   })
     .then(res => {
       status = res.status;
