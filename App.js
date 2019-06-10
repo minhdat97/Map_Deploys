@@ -624,8 +624,8 @@ export default class App extends React.Component {
           key={id}
           origin={this.state.curCoordinates}
           waypoints={null}
-          destination={`${authData.firstPoint[0].latitude},${
-            authData.firstPoint[0].longitude
+          destination={`${authData.firstPoint.latitude},${
+            authData.firstPoint.longitude
           }`}
           apikey={GOOGLE_MAPS_APIKEY}
           strokeWidth={3}
