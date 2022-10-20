@@ -6,7 +6,7 @@
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "dependencies": {
-    "expo": "^32.0.0",
+    "expo": "^46.0.16",
     "lodash.isequal": "4.5.0",
     "native-base": "^2.7.0",
     "prop-types": "15.7.2",
